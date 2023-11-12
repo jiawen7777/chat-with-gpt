@@ -1,0 +1,45 @@
+version: '3.9'
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: ./deploy/Dockerfile
+      target: prod
+    image: chatbot:${CHATBOT_VERSION:-latest}
+    restart: always
+    env_file:
+    - .env
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      CHATBOT_HOST: 0.0.0.0
+      CHATBOT_DB_HOST: chatbot-db
+      CHATBOT_DB_PORT: 3306
+      CHATBOT_DB_USER: chatbot
+      CHATBOT_DB_PASS: chatbot
+      CHATBOT_DB_BASE: chatbot
+
+  db:
+    image: bitnami/mysql:8.0.30
+    hostname: chatbot-db
+    restart: always
+    environment:
+      MYSQL_ROOT_USER: "chatbot"
+      MYSQL_ROOT_PASSWORD: "chatbot"
+      MYSQL_DATABASE: "chatbot"
+      MYSQL_AUTHENTICATION_PLUGIN: "mysql_native_password"
+    healthcheck:
+      test: mysqladmin ping -h localhost
+      interval: 10s
+      timeout: 5s
+      retries: 40
+    volumes:
+    - chatbot-db-data:/bitnami/mysql/data
+
+
+
+volumes:
+  chatbot-db-data:
+    name: chatbot-db-data
