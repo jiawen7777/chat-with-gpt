@@ -4,31 +4,18 @@ from fastapi import APIRouter
 from starlette.responses import StreamingResponse
 import openai
 from chatbot.web.api.chat.schema import RequestModel
+
 from chatbot.web.api.chat.algorithms import weather_util
 import time
 
+# start = time.time()
+# #long running
+# #do something other
+# end = time.time()
+# print end-start
 router = APIRouter()
 
-openai.api_key = "xxx"
-
-
-def get_openai_generator(request_message: RequestModel):
-    start_time = time.time()
-    openai_stream = openai.ChatCompletion.create(
-        model=request_message.model,
-        messages=request_message.messages,
-        temperature=request_message.temperature,
-        stream=True,
-    )
-    end_time = time.time()
-    print("non-Function Calling time cost:", end_time - start_time)
-
-    for event in openai_stream:
-        if "content" in event["choices"][0].delta:
-            current_response = event["choices"][0].delta.content
-            # result_dict["data"] = current_response
-            yield "data: " + current_response + "\n\n"
-
+openai.api_key = "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"
 
 functions = [
     {
@@ -49,8 +36,7 @@ functions = [
     }]
 
 
-def get_openai_generator_function_calling(request_message: RequestModel):
-    start_time = time.time()
+def get_openai_generator(request_message: RequestModel):
     openai_stream = openai.ChatCompletion.create(
         model="gpt-3.5-turbo-0613",
         messages=request_message.messages,
@@ -59,16 +45,14 @@ def get_openai_generator_function_calling(request_message: RequestModel):
         functions=functions,
         function_call="auto"  # auto is default, but we'll be explicit
     )
+    result_dict = dict()
     function_call_str = ""
     function_call_name = ""
     function_call_flag = False
-    end_time = time.time()
-    print("Function Calling time cost:", end_time - start_time)
     for event in openai_stream:
         # the end of function call state, this is the last event of the request,
         # after this event, the request will be closed.
-        if event["choices"][0]["finish_reason"] is not None and event["choices"][0][
-            "finish_reason"] == "function_call":
+        if event["choices"][0]["finish_reason"] is not None and event["choices"][0]["finish_reason"] == "function_call":
             function_call_flag = False
             # call function by using function_call_name
             my_dict = json.loads(function_call_str)
@@ -123,6 +107,9 @@ def get_openai_generator_function_calling(request_message: RequestModel):
             yield "data: " + current_response + "\n\n"
 
 
+
+
+
 def get_current_weather(location: str, unit: str = "celsius"):
     weather_info = {
         "location": location,
@@ -133,10 +120,10 @@ def get_current_weather(location: str, unit: str = "celsius"):
     return json.dumps(weather_info)
 
 
+
+
 @router.post('/stream')
 async def stream(request: RequestModel):
-    if request.function_calling:
-        return StreamingResponse(get_openai_generator_function_calling(request),
-                                 media_type='text/event-stream')
+    print("Post call, request: ", request)
     return StreamingResponse(get_openai_generator(request),
                              media_type='text/event-stream')

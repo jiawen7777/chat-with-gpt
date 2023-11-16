@@ -8,3 +8,4 @@ class RequestModel(BaseModel):
     model: str
     messages: list[dict[str, str]]
     temperature: float
+    function_calling: bool

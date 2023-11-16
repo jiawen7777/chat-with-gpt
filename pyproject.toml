@@ -8,6 +8,7 @@ packages = [{include = "chat_with_gpt"}]
 
 [tool.poetry.dependencies]
 python = "^3.11"
+chatbot = "^1.5.2b0"
 
 
 [build-system]

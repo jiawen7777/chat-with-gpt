@@ -22,6 +22,7 @@ import {
   Grid,
   InputLabel,
   Input,
+  Switch
 } from "@mui/material";
 
 // "Explain things like you would to a 10 year old learning how to code."
@@ -45,8 +46,14 @@ function ChatPage() {
     },
   ]);
 
-  const [model, setModel] = useState("");
+  const [model, setModel] = useState("gpt-3.5-turbo");
   const [tmp, setTmp] = useState(0.0);
+  const [functionCall, setFunctionCall] = useState(true);
+
+  const handleToggleFunctionCall = (event) => {
+    setFunctionCall(event.target.checked);
+  };
+
 
   const handleChange = (event) => {
     setModel(event.target.value);
@@ -104,6 +111,7 @@ function ChatPage() {
         ...apiMessages, // The messages from our chat with ChatGPT
       ],
       temperature: tmp,
+      function_calling: functionCall
     };
     const serverBaseURL = "http://localhost:8001";
 
@@ -129,7 +137,7 @@ function ChatPage() {
         },
         onmessage(event) {
           let parsedData = event.data;
-          console.log(event);
+          
           if (parsedData === "") {
             parsedData = " \n ";
           }
@@ -148,6 +156,7 @@ function ChatPage() {
         },
         onclose() {
           setIsTyping(false);
+          console.log(messages);
           console.log("Connection closed by the server");
         },
         onerror(err) {
@@ -181,6 +190,15 @@ function ChatPage() {
                     <MenuItem value={"gpt-3.5-turbo"}>GPT 3.5</MenuItem>
                   </Select>
                 </Grid>
+                <Grid item xs={2}>
+                  <InputLabel>Function Calling</InputLabel>
+                  <Switch
+                    checked={functionCall}
+                    onChange={handleToggleFunctionCall}
+                    inputProps={{ "aria-label": "controlled" }}
+                  />
+                </Grid>
+
                 <Grid item xs={2}>
                   <InputLabel>Temperature</InputLabel>
                   <Input
