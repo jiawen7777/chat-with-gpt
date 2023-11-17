@@ -1,7 +1,11 @@
 import requests
 import json
+import os
+from dotenv import load_dotenv
 
-api_key = ""
+load_dotenv()
+api_key = os.getenv("AMAP_API_KEY")
+
 api_url = "https://restapi.amap.com/v3/weather/weatherInfo?city="
 loc_dict = {
     'Central and Western': 810001,

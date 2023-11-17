@@ -6,10 +6,14 @@ import openai
 from chatbot.web.api.chat.schema import RequestModel
 from chatbot.web.api.chat.algorithms import weather_util
 import time
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+openai.api_key = os.getenv("OPENAI_API_KEY")
 
 router = APIRouter()
-
-openai.api_key = "sk-"
 
 
 def get_openai_generator(request_message: RequestModel):
@@ -67,8 +71,8 @@ def get_openai_generator_function_calling(request_message: RequestModel):
     for event in openai_stream:
         # the end of function call state, this is the last event of the request,
         # after this event, the request will be closed.
-        if event["choices"][0]["finish_reason"] is not None and event["choices"][0][
-            "finish_reason"] == "function_call":
+        if (event["choices"][0]["finish_reason"] is not None
+            and event["choices"][0]["finish_reason"] == "function_call"):
             function_call_flag = False
             # call function by using function_call_name
             my_dict = json.loads(function_call_str)
