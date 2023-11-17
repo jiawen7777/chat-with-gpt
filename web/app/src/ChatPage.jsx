@@ -1,4 +1,6 @@
+/* eslint-disable react/prop-types */
 import { useState } from "react";
+import axios from "axios";
 import "./App.css";
 import "@chatscope/chat-ui-kit-styles/dist/default/styles.min.css";
 import { fetchEventSource } from "@microsoft/fetch-event-source";
@@ -11,6 +13,7 @@ import {
   MessageInput,
   TypingIndicator,
   Avatar,
+  Button,
 } from "@chatscope/chat-ui-kit-react";
 import ReactMarkdown from "react-markdown";
 import GPTLogo from "./assets/gpt_logo.png";
@@ -22,7 +25,7 @@ import {
   Grid,
   InputLabel,
   Input,
-  Switch
+  Switch,
 } from "@mui/material";
 
 // "Explain things like you would to a 10 year old learning how to code."
@@ -33,37 +36,67 @@ const systemMessage = {
     "Explain things like you're talking to a software professional with 2 years of experience.",
 };
 
-function ChatPage() {
-  const [messages, setMessages] = useState([
-    {
-      message:
-        "Hello jiawen, I'm a professional Software Engineer, Ask me anything!",
-      sentTime: "just now",
-      sender: "ChatGPT",
-      direction: "incoming",
-      position: "last",
-      type: "html",
-    },
-  ]);
-
+// eslint-disable-next-line react/prop-types, no-unused-vars
+function ChatPage({
+  selectedConversationId,
+  setSelectedConversationId,
+  messages,
+  setMessages,
+  conversations,
+  setConversations,
+}) {
   const [model, setModel] = useState("gpt-3.5-turbo");
   const [tmp, setTmp] = useState(0.0);
+  const [pp, setPp] = useState(0.0);
   const [functionCall, setFunctionCall] = useState(true);
+  const serverBaseURL = "http://localhost:8001";
+  const [isTyping, setIsTyping] = useState(false);
 
   const handleToggleFunctionCall = (event) => {
     setFunctionCall(event.target.checked);
   };
 
-
   const handleChange = (event) => {
     setModel(event.target.value);
+  };
+
+  const handlePPChange = (event) => {
+    setPp(event.target.value);
   };
 
   const handleTemChange = (event) => {
     setTmp(event.target.value);
   };
 
-  const [isTyping, setIsTyping] = useState(false);
+  const saveMessages = async () => {
+    try {
+      const response = await axios.post(serverBaseURL + "/api/docs/messages/", {
+        conversation_id: selectedConversationId,
+        messages: messages,
+      });
+
+      if (response.data && response.data.status === "created") {
+        // 检查后端返回状态是否为 'created'
+        const insertedId = response.data.inserted_id;
+        if (insertedId) {
+          // 如果有 inserted_id，则更新 selectedConversationId
+          setSelectedConversationId(insertedId);
+          setConversations([
+            ...conversations,
+            {
+              id: insertedId,
+              last_message: "New Message",
+            },
+          ]);
+          console.log(conversations)
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching conversations:", error);
+      // TODO:设置一个错误状态，并在UI中显示错误消息
+    }
+  };
+
   let botMessageContent = "";
   const handleSend = async (message) => {
     const newMessage = {
@@ -111,9 +144,8 @@ function ChatPage() {
         ...apiMessages, // The messages from our chat with ChatGPT
       ],
       temperature: tmp,
-      function_calling: functionCall
+      function_calling: functionCall,
     };
-    const serverBaseURL = "http://localhost:8001";
 
     const fetchData = async () => {
       await fetchEventSource(`${serverBaseURL}/api/chat/stream`, {
@@ -137,7 +169,7 @@ function ChatPage() {
         },
         onmessage(event) {
           let parsedData = event.data;
-          
+
           if (parsedData === "") {
             parsedData = " \n ";
           }
@@ -198,15 +230,37 @@ function ChatPage() {
                     inputProps={{ "aria-label": "controlled" }}
                   />
                 </Grid>
-
                 <Grid item xs={2}>
                   <InputLabel>Temperature</InputLabel>
                   <Input
                     type="number"
-                    step="0.1"
+                    inputProps={{
+                      step: 0.1,
+                      min: "0", // 这里设置最小值
+                      max: "2", // 这里设置最大值
+                    }}
                     value={tmp}
                     onChange={handleTemChange}
-                  ></Input>
+                  />
+                </Grid>
+                <Grid item xs={2}>
+                  <InputLabel>Presence Penalty</InputLabel>
+                  <Input
+                    type="number"
+                    inputProps={{
+                      step: 0.1,
+                      min: "-2", // 这里设置最小值
+                      max: "2", // 这里设置最大值
+                    }}
+                    value={pp}
+                    onChange={handlePPChange}
+                  />
+                </Grid>
+
+                <Grid item xs={2}>
+                  <Button border onClick={saveMessages}>
+                    Save Conversation
+                  </Button>
                 </Grid>
               </Grid>
             </ConversationHeader.Content>
@@ -217,21 +271,24 @@ function ChatPage() {
               isTyping ? <TypingIndicator content="ChatGPT is typing" /> : null
             }
           >
-            {messages.map((message, i) => {
-              return (
-                <Message key={i} model={message}>
-                  {message.sender === "ChatGPT" ? (
-                    <Avatar src={GPTLogo} name={message.sender} size="md" />
-                  ) : (
-                    <Avatar src={UserLogo} name={message.sender} size="md" />
-                  )}
-                  <Message.CustomContent>
-                    <ReactMarkdown>{message.message}</ReactMarkdown>
-                  </Message.CustomContent>
-                  <Message.Footer sentTime={message.sentTime} />
-                </Message>
-              );
-            })}
+            {
+              // eslint-disable-next-line react/prop-types
+              messages.map((message, i) => {
+                return (
+                  <Message key={i} model={message}>
+                    {message.sender === "ChatGPT" ? (
+                      <Avatar src={GPTLogo} name={message.sender} size="md" />
+                    ) : (
+                      <Avatar src={UserLogo} name={message.sender} size="md" />
+                    )}
+                    <Message.CustomContent>
+                      <ReactMarkdown>{message.message}</ReactMarkdown>
+                    </Message.CustomContent>
+                    <Message.Footer sentTime={message.sentTime} />
+                  </Message>
+                );
+              })
+            }
           </MessageList>
 
           <MessageInput placeholder="Type message here" onSend={handleSend} />

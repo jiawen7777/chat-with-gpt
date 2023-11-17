@@ -9,7 +9,7 @@ import time
 
 router = APIRouter()
 
-openai.api_key = "xxx"
+openai.api_key = "sk-"
 
 
 def get_openai_generator(request_message: RequestModel):
