@@ -1,5 +1,5 @@
 # Chat With GPT
-<img width="1784" alt="image" src="https://github.com/jiawen7777/chat-with-gpt/assets/43628912/82c37f05-57a2-415d-a579-6187f3fc7b19">
+<img width="1792" alt="image" src="https://github.com/jiawen7777/chat-with-gpt/assets/43628912/ac407a90-479e-4953-b6e9-b48de3cecbdd">
 
 # Features
  - Stream output: The application allows for streaming output, providing real-time updates.
