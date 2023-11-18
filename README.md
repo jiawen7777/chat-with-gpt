@@ -39,5 +39,4 @@ Once the installation is complete, run the following command to start the projec
 ```bash
 npm run dev
 ```
-
-This Readme file provides an overview of the project. Please feel free to refine the language as needed.
+Enjoy bro!
